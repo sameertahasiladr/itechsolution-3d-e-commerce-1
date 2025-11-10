@@ -1,7 +1,8 @@
+// src/app/robots.ts
 import { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
-  // IMPORTANT: Remove trailing slash if it exists
+  // Automatically remove trailing slash if present
   const baseUrl =
     (process.env.NEXT_PUBLIC_SITE_URL || "https://itechsolution.vercel.app").replace(/\/$/, "");
 
