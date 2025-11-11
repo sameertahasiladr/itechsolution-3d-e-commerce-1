@@ -123,8 +123,8 @@ export default function Footer() {
               </li>
               <li className="flex items-start space-x-2">
                 <Mail className="h-4 w-4 mt-1 text-blue-400" />
-                <a href="mailto:info@itechsolution.com" className="text-gray-400 hover:text-white transition-colors">
-                  info@itechsolution.com
+                <a href="mailto:isaqtechsolutions@gmail.com" className="text-gray-400 hover:text-white transition-colors">
+                  isaqtechsolutions@gmail.com
                 </a>
               </li>
               <li className="flex items-start space-x-2">

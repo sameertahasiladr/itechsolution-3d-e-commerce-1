@@ -118,7 +118,7 @@ export default function HeroSection() {
             >
               <div className="relative w-full h-[500px] rounded-2xl overflow-hidden shadow-2xl">
                 <Image
-                  src="https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&h=600&fit=crop"
+                  src="https://img.freepik.com/free-photo/travel-still-life-collection_23-2148837284.jpg?semt=ais_hybrid&w=740&q=80"
                   alt="Tech Products"
                   fill
                   className="object-cover"
