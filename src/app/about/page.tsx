@@ -52,7 +52,7 @@ export default function AboutPage() {
               <h1 className="text-5xl font-bold mb-6">
                 About{' '}
                 <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  iTechSolution
+                  iTechSolutions
                 </span>
               </h1>
               <p className="text-lg text-muted-foreground mb-6">
