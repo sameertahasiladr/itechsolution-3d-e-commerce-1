@@ -206,7 +206,7 @@ export default function AboutPage() {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <h2 className="text-4xl font-bold mb-4">Why Choose iTechSolution?</h2>
+            <h2 className="text-4xl font-bold mb-4">Why Choose iTechSolutions?</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Here's what makes us stand out from the competition
             </p>

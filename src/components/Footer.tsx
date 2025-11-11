@@ -20,7 +20,7 @@ export default function Footer() {
           {/* Company Info */}
           <div>
             <h3 className="text-xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              iTechSolution
+              iTechSolutions
             </h3>
             <p className="text-gray-400 text-sm mb-4">
               Your trusted partner for quality tech products. We offer new and refurbished laptops, desktops, accessories, and more.
@@ -136,7 +136,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-          <p>&copy; {new Date().getFullYear()} iTechSolution. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} iTechSolutions. All rights reserved.</p>
         </div>
       </div>
     </footer>
