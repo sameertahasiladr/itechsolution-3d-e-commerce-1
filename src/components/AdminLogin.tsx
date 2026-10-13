@@ -1,165 +1,118 @@
-'use client';
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Lock, UserPlus } from 'lucide-react';
-import { authClient } from '@/lib/auth-client';
-import { toast } from 'sonner';
+"use client";
+
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Lock, UserPlus } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
 
 interface AdminLoginProps {
   onLogin: () => void;
 }
 
-// Helper function to wait for token
-const waitForToken = (maxAttempts = 10, delayMs = 100): Promise<string | null> => {
-  return new Promise((resolve) => {
-    let attempts = 0;
-    const checkToken = () => {
-      const token = localStorage.getItem('bearer_token');
-      if (token) {
-        resolve(token);
-      } else if (attempts < maxAttempts) {
-        attempts++;
-        setTimeout(checkToken, delayMs);
-      } else {
-        resolve(null);
-      }
-    };
-    checkToken();
-  });
-};
-
 export default function AdminLogin({ onLogin }: AdminLoginProps) {
   const [isRegistering, setIsRegistering] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error("Passwords do not match");
       return;
     }
 
-    if (formData.password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (formData.password.length < 12) {
+      toast.error("Use a password with at least 12 characters");
       return;
     }
 
     setLoading(true);
-    
+
     try {
-      // Register user with admin role
-      const { data, error } = await authClient.signUp.email({
-        email: formData.email,
-        name: formData.name,
+      const { error } = await authClient.signUp.email({
+        email: formData.email.trim(),
+        name: formData.name.trim(),
         password: formData.password,
       });
 
-      if (error?.code) {
-        const errorMap: Record<string, string> = {
-          USER_ALREADY_EXISTS: 'Email already registered',
-        };
-        toast.error(errorMap[error.code] || 'Registration failed');
-        setLoading(false);
+      if (error) {
+        toast.error(error.message || "Registration failed");
         return;
       }
 
-      // Wait for token to be stored in localStorage
-      const token = await waitForToken();
-      
-      if (!token) {
-        toast.error('Failed to get authentication token');
-        setLoading(false);
-        return;
-      }
+      toast.success(
+        "Account created. An existing administrator must grant admin access."
+      );
 
-      // Set admin role via API
-      const roleResponse = await fetch('/api/admin/set-role', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ role: 'admin' })
+      setIsRegistering(false);
+      setFormData({
+        name: "",
+        email: formData.email.trim(),
+        password: "",
+        confirmPassword: "",
       });
-
-      if (!roleResponse.ok) {
-        const errorData = await roleResponse.json();
-        console.error('Failed to set admin role:', errorData);
-        toast.error('Failed to set admin role. Please contact support.');
-        await authClient.signOut();
-        localStorage.removeItem('bearer_token');
-        setLoading(false);
-        return;
-      }
-
-      toast.success('Admin account created successfully!');
-      onLogin();
     } catch (error) {
-      console.error('Registration error:', error);
-      toast.error('Failed to create admin account');
+      console.error("Registration failed:", error);
+      toast.error("Could not create account");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
-      const { data, error } = await authClient.signIn.email({
-        email: formData.email,
+      const { error } = await authClient.signIn.email({
+        email: formData.email.trim(),
         password: formData.password,
         rememberMe: true,
       });
 
       if (error) {
-        toast.error('Invalid email or password');
-        setLoading(false);
+        toast.error(error.message || "Invalid email or password");
         return;
       }
 
-      // Wait for token to be stored in localStorage
-      const token = await waitForToken();
-      
-      if (!token) {
-        toast.error('Failed to get authentication token');
-        setLoading(false);
-        return;
-      }
-
-      // Check if user is admin
-      const response = await fetch('/api/admin/check', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+      // Verify the server-side Better Auth session and database role.
+      const response = await fetch("/api/admin/check", {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
       });
 
       const result = await response.json();
 
-      if (result.isAdmin) {
-        toast.success('Welcome, Admin!');
-        onLogin();
-      } else {
-        toast.error('Access denied. Admin privileges required.');
-        // Sign out non-admin user
+      if (!response.ok || result.isAdmin !== true) {
         await authClient.signOut();
-        localStorage.removeItem('bearer_token');
-        setLoading(false);
+        toast.error(
+          result.error || "Access denied. Admin privileges required."
+        );
+        return;
       }
+
+      toast.success("Welcome, Admin!");
+      onLogin();
     } catch (error) {
-      console.error('Login error:', error);
-      toast.error('Failed to login. Please try again.');
+      console.error("Admin login failed:", error);
+      toast.error("Could not verify admin access");
+    } finally {
       setLoading(false);
     }
   };
@@ -175,84 +128,123 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
               <Lock className="w-8 h-8 text-blue-600" />
             )}
           </div>
+
           <CardTitle className="text-2xl">
-            {isRegistering ? 'Admin Registration' : 'Admin Login'}
+            {isRegistering ? "Create Account" : "Admin Login"}
           </CardTitle>
+
           <p className="text-sm text-muted-foreground">
-            {isRegistering ? 'Create an admin account' : 'Access the admin dashboard'}
+            {isRegistering
+              ? "Create an account. Admin access must be granted separately."
+              : "Sign in to access the admin dashboard"}
           </p>
         </CardHeader>
+
         <CardContent>
-          <form onSubmit={isRegistering ? handleRegister : handleLogin} className="space-y-4">
+          <form
+            onSubmit={isRegistering ? handleRegister : handleLogin}
+            className="space-y-4"
+          >
             {isRegistering && (
               <div>
-                <label className="text-sm font-medium mb-2 block">Full Name</label>
+                <label className="text-sm font-medium mb-2 block">
+                  Full Name
+                </label>
                 <Input
-                  type="text"
-                  placeholder="Enter your name"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  placeholder="Enter your name"
+                  autoComplete="name"
                   disabled={loading}
                   required
                 />
               </div>
             )}
-            
+
             <div>
-              <label className="text-sm font-medium mb-2 block">Email</label>
+              <label className="text-sm font-medium mb-2 block">
+                Email
+              </label>
               <Input
                 type="email"
-                placeholder="Enter email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                placeholder="Enter email"
+                autoComplete="email"
                 disabled={loading}
                 required
               />
             </div>
-            
+
             <div>
-              <label className="text-sm font-medium mb-2 block">Password</label>
+              <label className="text-sm font-medium mb-2 block">
+                Password
+              </label>
               <Input
                 type="password"
-                placeholder={isRegistering ? 'Create password' : 'Enter password'}
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                placeholder={isRegistering ? "Create password" : "Enter password"}
+                autoComplete={isRegistering ? "new-password" : "current-password"}
                 disabled={loading}
                 required
-                autoComplete="off"
               />
             </div>
-            
+
             {isRegistering && (
               <div>
-                <label className="text-sm font-medium mb-2 block">Confirm Password</label>
+                <label className="text-sm font-medium mb-2 block">
+                  Confirm Password
+                </label>
                 <Input
                   type="password"
-                  placeholder="Confirm password"
                   value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      confirmPassword: e.target.value,
+                    })
+                  }
+                  placeholder="Confirm password"
+                  autoComplete="new-password"
                   disabled={loading}
                   required
-                  autoComplete="off"
                 />
               </div>
             )}
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (isRegistering ? 'Creating Account...' : 'Logging in...') : (isRegistering ? 'Create Admin Account' : 'Login')}
+              {loading
+                ? "Please wait..."
+                : isRegistering
+                  ? "Create Account"
+                  : "Login"}
             </Button>
-            
+
             <Button
               type="button"
               variant="outline"
               className="w-full"
+              disabled={loading}
               onClick={() => {
                 setIsRegistering(!isRegistering);
-                setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+                setFormData({
+                  name: "",
+                  email: formData.email,
+                  password: "",
+                  confirmPassword: "",
+                });
               }}
-              disabled={loading}
             >
-              {isRegistering ? 'Already have an account? Login' : 'Need an account? Register'}
+              {isRegistering
+                ? "Already have an account? Login"
+                : "Need an account? Register"}
             </Button>
           </form>
         </CardContent>

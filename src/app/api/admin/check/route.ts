@@ -1,130 +1,79 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { user, session } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/db";
+import { user } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   try {
-    // Extract Authorization header
-    const authHeader = request.headers.get('Authorization');
-    
-    if (!authHeader) {
+    // Validate the Better Auth session using request cookies.
+    const sessionData = await auth.api.getSession({
+      headers: request.headers,
+    });
+
+    if (!sessionData?.user?.id) {
       return NextResponse.json(
-        { 
-          isAdmin: false, 
-          error: 'No authentication token' 
-        }, 
+        {
+          isAdmin: false,
+          error: "Not authenticated. Please sign in again.",
+        },
         { status: 401 }
       );
     }
 
-    // Check for Bearer token format
-    if (!authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { 
-          isAdmin: false, 
-          error: 'Invalid token format' 
-        }, 
-        { status: 401 }
-      );
-    }
-
-    // Extract token from "Bearer <token>"
-    const token = authHeader.substring(7);
-
-    if (!token) {
-      return NextResponse.json(
-        { 
-          isAdmin: false, 
-          error: 'No authentication token' 
-        }, 
-        { status: 401 }
-      );
-    }
-
-    // Query session by token
-    const sessionResult = await db
-      .select()
-      .from(session)
-      .where(eq(session.token, token))
-      .limit(1);
-
-    if (sessionResult.length === 0) {
-      return NextResponse.json(
-        { 
-          isAdmin: false, 
-          error: 'Invalid or expired session' 
-        }, 
-        { status: 401 }
-      );
-    }
-
-    const userSession = sessionResult[0];
-
-    // Check if session is expired
-    const now = new Date();
-    if (userSession.expiresAt < now) {
-      return NextResponse.json(
-        { 
-          isAdmin: false, 
-          error: 'Invalid or expired session' 
-        }, 
-        { status: 401 }
-      );
-    }
-
-    // Get user from session
-    const userId = userSession.userId;
-
-    const userResult = await db
-      .select()
+    // Fetch the current user's role from PostgreSQL.
+    const [currentUser] = await db
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      })
       .from(user)
-      .where(eq(user.id, userId))
+      .where(eq(user.id, sessionData.user.id))
       .limit(1);
 
-    if (userResult.length === 0) {
+    if (!currentUser) {
       return NextResponse.json(
-        { 
-          isAdmin: false, 
-          error: 'User not found' 
-        }, 
+        {
+          isAdmin: false,
+          error: "User not found.",
+        },
         { status: 404 }
       );
     }
 
-    const currentUser = userResult[0];
-
-    // Check if user has admin role
-    if (currentUser.role === 'admin') {
+    if (currentUser.role !== "admin") {
       return NextResponse.json(
-        { 
-          isAdmin: true,
-          user: {
-            id: currentUser.id,
-            name: currentUser.name,
-            email: currentUser.email,
-            role: currentUser.role
-          }
-        }, 
-        { status: 200 }
+        {
+          isAdmin: false,
+          error: "Admin privileges required.",
+        },
+        { status: 403 }
       );
     }
 
-    // User is authenticated but not admin
     return NextResponse.json(
-      { 
-        isAdmin: false 
-      }, 
-      { status: 200 }
+      {
+        isAdmin: true,
+        user: currentUser,
+      },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "no-store",
+        },
+      }
     );
-
   } catch (error) {
-    console.error('GET /api/admin/check error:', error);
+    console.error("GET /api/admin/check error:", error);
+
     return NextResponse.json(
-      { 
+      {
         isAdmin: false,
-        error: 'Internal server error: ' + (error instanceof Error ? error.message : 'Unknown error')
-      }, 
+        error: "Failed to verify admin session.",
+      },
       { status: 500 }
     );
   }
