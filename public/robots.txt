@@ -10,7 +10,7 @@ Disallow: /register
 Disallow: /api
 
 # Host
-Host: https://itechsolution.vercel.app
+Host: http://localhost:3000
 
 # Sitemaps
-Sitemap: https://itechsolution.vercel.app/sitemap.xml
+Sitemap: http://localhost:3000/sitemap.xml
