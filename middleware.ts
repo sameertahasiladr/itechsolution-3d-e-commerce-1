@@ -1,22 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
 
-export async function middleware(request: NextRequest) {
-  // Only protect admin routes
-  if (request.nextUrl.pathname.startsWith('/admin')) {
-    const session = await auth.api.getSession({ headers: await headers() });
-    
-    // Allow access to admin page without session - AdminLogin will handle it
-    if (!session) {
-      return NextResponse.next();
-    }
-    
-    // If user is authenticated, verify admin role
-    // This will be checked by the AdminPage component
+import { NextRequest, NextResponse } from "next/server";
+
+export function middleware(request: NextRequest) {
+  // Allow the admin page to load.
+  // AdminLogin and the admin API routes handle authentication.
+  if (request.nextUrl.pathname.startsWith("/admin")) {
     return NextResponse.next();
   }
-  
+
   return NextResponse.next();
 }
 

@@ -1,74 +1,83 @@
-import { sqliteTable, integer, text, real } from 'drizzle-orm/sqlite-core';
 
-export const products = sqliteTable('products', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  name: text('name').notNull(),
-  description: text('description'),
-  price: real('price').notNull(),
-  category: text('category').notNull(),
-  condition: text('condition').notNull(),
-  image: text('image'),
-  stock: integer('stock').notNull().default(0),
-  featured: integer('featured', { mode: 'boolean' }).default(false),
-  specifications: text('specifications', { mode: 'json' }),
-  createdAt: text('created_at').notNull(),
-  updatedAt: text('updated_at').notNull(),
+import {
+  pgTable,
+  serial,
+  integer,
+  text,
+  doublePrecision,
+  boolean,
+  jsonb,
+  timestamp,
+} from "drizzle-orm/pg-core";
+
+export const products = pgTable("products", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  price: doublePrecision("price").notNull(),
+  category: text("category").notNull(),
+  condition: text("condition").notNull(),
+  image: text("image"),
+  stock: integer("stock").notNull().default(0),
+  featured: boolean("featured").default(false),
+  specifications: jsonb("specifications"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
 });
 
-export const orders = sqliteTable('orders', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  customerName: text('customer_name').notNull(),
-  customerPhone: text('customer_phone').notNull(),
-  customerEmail: text('customer_email'),
-  total: real('total').notNull(),
-  status: text('status').notNull().default('pending'),
-  createdAt: text('created_at').notNull(),
-  updatedAt: text('updated_at').notNull(),
+export const orders = pgTable("orders", {
+  id: serial("id").primaryKey(),
+  customerName: text("customer_name").notNull(),
+  customerPhone: text("customer_phone").notNull(),
+  customerEmail: text("customer_email"),
+  total: doublePrecision("total").notNull(),
+  status: text("status").notNull().default("pending"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
 });
 
-export const orderItems = sqliteTable('order_items', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  orderId: integer('order_id').notNull().references(() => orders.id),
-  productId: text('product_id').notNull(),
-  productName: text('product_name').notNull(),
-  productPrice: real('product_price').notNull(),
-  quantity: integer('quantity').notNull(),
-  createdAt: text('created_at').notNull(),
+export const orderItems = pgTable("order_items", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id")
+    .notNull()
+    .references(() => orders.id),
+  productId: text("product_id").notNull(),
+  productName: text("product_name").notNull(),
+  productPrice: doublePrecision("product_price").notNull(),
+  quantity: integer("quantity").notNull(),
+  createdAt: text("created_at").notNull(),
 });
 
-export const adminUsers = sqliteTable('admin_users', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  username: text('username').notNull().unique(),
-  password: text('password').notNull(),
-  createdAt: text('created_at').notNull(),
-  updatedAt: text('updated_at').notNull(),
+export const adminUsers = pgTable("admin_users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
 });
 
-
-// Auth tables for better-auth
-export const user = sqliteTable("user", {
+// Better Auth tables
+export const user = pgTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
-  emailVerified: integer("email_verified", { mode: "boolean" })
-    .$defaultFn(() => false)
-    .notNull(),
+  emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
   role: text("role").notNull().default("user"),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .$defaultFn(() => new Date())
-    .notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" })
-    .$defaultFn(() => new Date())
-    .notNull(),
+  createdAt: timestamp("created_at", { mode: "date" })
+    .notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "date" })
+    .notNull().defaultNow(),
 });
 
-export const session = sqliteTable("session", {
+export const session = pgTable("session", {
   id: text("id").primaryKey(),
-  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+  expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
   token: text("token").notNull().unique(),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  createdAt: timestamp("created_at", { mode: "date" })
+    .notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "date" })
+    .notNull().defaultNow(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   userId: text("user_id")
@@ -76,7 +85,7 @@ export const session = sqliteTable("session", {
     .references(() => user.id, { onDelete: "cascade" }),
 });
 
-export const account = sqliteTable("account", {
+export const account = pgTable("account", {
   id: text("id").primaryKey(),
   accountId: text("account_id").notNull(),
   providerId: text("provider_id").notNull(),
@@ -86,40 +95,42 @@ export const account = sqliteTable("account", {
   accessToken: text("access_token"),
   refreshToken: text("refresh_token"),
   idToken: text("id_token"),
-  accessTokenExpiresAt: integer("access_token_expires_at", {
-    mode: "timestamp",
+  accessTokenExpiresAt: timestamp("access_token_expires_at", {
+    mode: "date",
   }),
-  refreshTokenExpiresAt: integer("refresh_token_expires_at", {
-    mode: "timestamp",
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
+    mode: "date",
   }),
   scope: text("scope"),
   password: text("password"),
-  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  createdAt: timestamp("created_at", { mode: "date" })
+    .notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "date" })
+    .notNull().defaultNow(),
 });
 
-export const verification = sqliteTable("verification", {
+export const verification = pgTable("verification", {
   id: text("id").primaryKey(),
   identifier: text("identifier").notNull(),
   value: text("value").notNull(),
-  expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }).$defaultFn(
-    () => new Date(),
-  ),
-  updatedAt: integer("updated_at", { mode: "timestamp" }).$defaultFn(
-    () => new Date(),
-  ),
+  expiresAt: timestamp("expires_at", { mode: "date" }).notNull(),
+  createdAt: timestamp("created_at", { mode: "date" })
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "date" })
+    .defaultNow(),
 });
 
-export const productImages = sqliteTable('product_images', {
-  id: integer('id').primaryKey({ autoIncrement: true }),
-  productId: integer('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
-  imageUrl: text('image_url').notNull(),
-  publicId: text('public_id').notNull(),
-  displayOrder: integer('display_order').default(0),
-  isPrimary: integer('is_primary', { mode: 'boolean' }).default(false),
-  width: integer('width'),
-  height: integer('height'),
-  format: text('format'),
-  createdAt: text('created_at').notNull(),
+export const productImages = pgTable("product_images", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id")
+    .notNull()
+    .references(() => products.id, { onDelete: "cascade" }),
+  imageUrl: text("image_url").notNull(),
+  publicId: text("public_id").notNull(),
+  displayOrder: integer("display_order").default(0),
+  isPrimary: boolean("is_primary").default(false),
+  width: integer("width"),
+  height: integer("height"),
+  format: text("format"),
+  createdAt: text("created_at").notNull(),
 });

@@ -1,15 +1,15 @@
 
-import { defineConfig } from 'drizzle-kit';
-import type { Config } from 'drizzle-kit';
+import { defineConfig } from "drizzle-kit";
 
-const dbConfig: Config = defineConfig({
-  schema: './src/db/schema.ts',
-  out: './drizzle',
-  dialect: 'turso',
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not configured");
+}
+
+export default defineConfig({
+  schema: "./src/db/schema.ts",
+  out: "./drizzle-neon",
+  dialect: "postgresql",
   dbCredentials: {
-    url: process.env.TURSO_CONNECTION_URL!,
-    authToken: process.env.TURSO_AUTH_TOKEN!,
+    url: process.env.DATABASE_URL,
   },
 });
-
-export default dbConfig;

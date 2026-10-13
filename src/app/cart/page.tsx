@@ -216,7 +216,7 @@ export default function CartPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleRemoveItem(item.id, item.name)}
+                              onClick={() => handleRemoveItem(String(item.id), item.name)}
                               className="text-destructive hover:text-destructive hover:bg-destructive/10"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -230,7 +230,7 @@ export default function CartPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                                onClick={() => handleQuantityChange(String(item.id), item.quantity - 1)}
                                 disabled={item.quantity <= 1}
                                 className="h-8 w-8 p-0"
                               >
@@ -239,7 +239,7 @@ export default function CartPage() {
                               <Input
                                 type="number"
                                 value={item.quantity}
-                                onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value) || 1)}
+                                onChange={(e) => handleQuantityChange(String(item.id), parseInt(e.target.value, 10) || 1)}
                                 className="h-8 w-16 text-center border-0 focus-visible:ring-0"
                                 min="1"
                                 max={item.stock}
@@ -247,7 +247,7 @@ export default function CartPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                                onClick={() => handleQuantityChange(String(item.id), item.quantity + 1)}
                                 disabled={item.quantity >= item.stock}
                                 className="h-8 w-8 p-0"
                               >
